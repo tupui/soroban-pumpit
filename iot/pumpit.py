@@ -10,8 +10,8 @@ from gpiozero import Button, LED, RGBLED
 clear_pump = Button(2)
 flow_meter = Button(3)
 
-rgb_led = RGBLED(red=9, green=10, blue=11)  # rgb_led.color = (0, 1, 0)
-red_led = LED(17)  # red_led.on()
+rgb_led = RGBLED(red=9, green=10, blue=11)
+red_led = LED(17)
 green_led = LED(27)
 
 
@@ -20,7 +20,7 @@ class Pump:
         self.ticks = []
         self.flow_history = []
 
-        self._lock = threading.Lock()
+        self._lock = threading.RLock()
 
     def clear(self) -> None:
         with self._lock:
@@ -42,9 +42,12 @@ class Pump:
         """
         # acquire lock to not add new ticks while reading the list. Could lose some ticks
         with self._lock:
-            data = pd.DataFrame(np.arange(len(self.ticks)), index=self.ticks)
+            n_ticks = len(self.ticks)
+            data = pd.DataFrame(np.arange(n_ticks), index=self.ticks)
             self.flow_history.append(*self.ticks)
-            self.ticks = []
+
+        if n_ticks > 10_000:  # avoid memory issues
+            self.clear()
 
         # ticks at 16Hz = 120 L/H
         q = data.rolling("1s").sum() / 8.  # 480 for L/H
