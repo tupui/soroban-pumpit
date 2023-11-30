@@ -1,0 +1,35 @@
+[build-system]
+requires = ["hatchling>=1.14.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "pumpit"
+version = "1.0"
+description = "Pumping the market"
+requires-python = ">=3.11"
+license = "BSD-3-Clause"
+authors = [
+    { name = "Pamphile Roy" },
+]
+maintainers = [
+    { name = "Pamphile Roy" },
+]
+classifiers = [
+    "License :: OSI Approved :: BSD License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+
+dependencies = [
+    "gpiozero",
+    "numpy",
+    "pandas",
+]
+
+[project.urls]
+homepage = "https://github.com/tupui/soroban-pumpit"
+documentation = "https://github.com/tupui/soroban-pumpit"
+source = "https://github.com/tupui/soroban-pumpit"
