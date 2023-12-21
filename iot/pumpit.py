@@ -8,11 +8,11 @@ from gpiozero import Button, LED, RGBLED
 
 # hardware setup
 clear_pump = Button(2)
-flow_meter = Button(3)
+flow_meter = Button(26)
 
 rgb_led = RGBLED(red=9, green=10, blue=11)
-red_led = LED(17)
-green_led = LED(27)
+red_led = LED(5)
+green_led = LED(6)
 
 
 class Pump:
@@ -28,11 +28,13 @@ class Pump:
             self.flow_history = []
 
     def tick(self) -> None:
-        self.ticks.append(pd.Timestamp(time.perf_counter_ns()))
+        with self._lock:
+            self.ticks.append(pd.Timestamp(time.perf_counter_ns()))
 
     def volume(self) -> float:
         """Total volume seen by the pump in L."""
-        return len(self.flow_history) / 480.
+        with self._lock:
+            return len(self.flow_history) / 480.
 
     def flow_rate(self, window: str = "3s") -> float:
         """Flow rate.
@@ -43,10 +45,12 @@ class Pump:
         # acquire lock to not add new ticks while reading the list. Could lose some ticks
         with self._lock:
             n_ticks = len(self.ticks)
+            if n_ticks == 0:
+                return 0.
             data = pd.DataFrame(np.arange(n_ticks), index=self.ticks)
-            self.flow_history.append(*self.ticks)
+            self.flow_history += self.ticks
 
-        if n_ticks > 10_000:  # avoid memory issues
+        if n_ticks > 1_000_000:  # avoid memory issues
             self.clear()
 
         # ticks at 16Hz = 120 L/H
@@ -66,8 +70,10 @@ green_led.on()
 # RGB LED is more and more green as we pump
 rgb_led.on()
 
+rgb_led.color = (0, 0, 0)
+
 while "Pumping":
-    time.sleep(7)
+    time.sleep(1)
     curr_volume = pump.volume()
     print(f"Flow rate: {pump.flow_rate()} L/M and we pumped {curr_volume} L")
 
@@ -77,6 +83,7 @@ while "Pumping":
         pump.clear()
         rgb_led.off()
         print("Calling Soroban smart contract")
+        time.sleep(5)
         # call Soroban contract
     else:
         rgb_led.color = (0, curr_volume / max_pumping_volume, 0)
