@@ -36,7 +36,7 @@ class Pump:
         with self._lock:
             return len(self.flow_history) / 480.
 
-    def flow_rate(self, window: str = "3s") -> float:
+    def flow_rate(self, window: str = "1s") -> float:
         """Flow rate.
 
         Count the ticks per seconds and convert to a flow rate in L/MIN.
@@ -47,7 +47,7 @@ class Pump:
             n_ticks = len(self.ticks)
             if n_ticks == 0:
                 return 0.
-            data = pd.DataFrame(np.arange(n_ticks), index=self.ticks)
+            data = pd.DataFrame(np.ones(n_ticks), index=self.ticks)
             self.flow_history += self.ticks
 
         if n_ticks > 1_000_000:  # avoid memory issues
@@ -55,7 +55,7 @@ class Pump:
 
         # ticks at 16Hz = 120 L/H
         q = data.rolling("1s").sum() / 8.  # 480 for L/H
-        return q.rolling(window).mean().iloc[0, -1]
+        return q.rolling(window).mean().iloc[-1, 0]
 
 
 pump = Pump()
