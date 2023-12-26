@@ -1,5 +1,11 @@
-![Soroban logo](doc/soroban-wordmark-temp.svg)
 # Pumpit
+
+<table align="center" border="0">
+<tr>
+<td><img src="doc/soroban-wordmark-temp.svg" alt="Soroban" width="250"/></td>
+</tr>
+</table>
+
 
 The goal of this project is to explore with IOT and
 [Soroban](https://soroban.stellar.org) - Stellar Smart Contract.
