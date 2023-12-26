@@ -86,8 +86,16 @@ Then we can transfer some funds on the contract which will be claimable
 make contract_deposit
 ```
 
+![Deposit and see in Stellar Explorer](doc/stellar_explorer_deposit.png)
+
 And finally to claim funds:
 
 ```bash
 make contract_claim
 ```
+
+![Claim and see in Stellar Explorer](doc/stellar_explorer_claim.png)
+
+And checking the balance shows that the address did receive the funds from the
+claimable balance:
+![Balance after claim and see in Stellar Explorer](doc/stellar_explorer_fund_after_claim.png)
