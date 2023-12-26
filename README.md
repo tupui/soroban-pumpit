@@ -142,9 +142,13 @@ soroban config identity fund mando --network testnet
 mkdir -p .soroban
 ```
 
-When performing operations on accounts (addresses), we can check the explorer:
+When performing operations on accounts (addresses), we can check an explorer:
 
 https://testnet.steexp.com/account/
+
+Or, to also see contracts and tokens (at the time of writing):
+
+https://stellar.expert/explorer
 
 Let's have a look at our balances. Great, we have some test funds in XLM: 10K.
 ![Accounts on Stellar Explorer](doc/stellar_explorer_fund.png)
