@@ -1,5 +1,15 @@
-//! The contract allows to deposit some amount of token and allow another
-//! account(s) claim it when a certain level is reach.
+//! # Pumpit Soroban Contract
+//!
+//! The contract allows to deposit some amount of token from one address to
+//! the contract's address itself. It further allows another
+//! account to claim its balance when a certain level is reach.
+//!
+//! This contract is to be used by the accompanying IOT code which runs on
+//! a Raspberry Pi.
+//!
+//! This contracts is inspired by the *timelock* example:
+//! https://github.com/stellar/soroban-examples/tree/main/timelock
+
 #![no_std]
 
 use soroban_sdk::{contract, contractimpl, contracttype, token, Address, BytesN, Env, Vec};
@@ -7,14 +17,14 @@ use soroban_sdk::{contract, contractimpl, contracttype, token, Address, BytesN, 
 #[contracttype]
 #[derive(Clone)]
 enum AdminKey {
-    Admin,
+    Admin,  // Contract administrator
 }
 
 #[derive(Clone)]
 #[contracttype]
 pub enum DataKey {
-    Init,
-    Balance,
+    Init,  // A key to check if the contract was initialized or not
+    Balance,  // Hold the claimable balance
 }
 
 #[derive(Clone)]
@@ -26,16 +36,27 @@ pub struct ClaimableBalance {
     pub pumping_level_target: i128,
 }
 
-fn reset(env: Env) {
-    env.storage().instance().remove(&DataKey::Balance);
-    env.storage().instance().remove(&DataKey::Init);
-}
-
 #[contract]
 pub struct ClaimableBalanceContract;
 
 #[contractimpl]
 impl ClaimableBalanceContract {
+    pub fn init(env: Env, admin: Address) {
+        env.storage().instance().set(&AdminKey::Admin, &admin);
+    }
+
+    pub fn version() -> u32 {
+        1
+    }
+
+    /// Deposit an `amount` of `token` to the contract's address.
+    /// Tokens originate from the `from` address and they can be claimed by
+    /// any of the `claimants` addresses if the `pumping_level_target` is
+    /// satisfied.
+    ///
+    /// Note: `token` is a hash. The CLI can be used to get it's value on a
+    /// given network:
+    /// `soroban lab token id --asset native --network testnet`
     pub fn deposit(
         env: Env,
         from: Address,
@@ -51,8 +72,8 @@ impl ClaimableBalanceContract {
         if is_initialized(&env) {
             panic!("contract has been already initialized");
         }
-        if claimants.len() > 2 {
-            panic!("only 2 claimants can play");
+        if claimants.len() > 20 {
+            panic!("only 20 claimants can play");
         }
 
         // Transfer token from `from` to this contract address.
@@ -105,19 +126,13 @@ impl ClaimableBalanceContract {
         reset(env)
     }
 
+    /// Reset the contract by deleting the claimable balance info.
+    /// You can lose the token!
     pub fn reset(env: Env) {
         let admin: Address = env.storage().instance().get(&AdminKey::Admin).unwrap();
         admin.require_auth();
 
         reset(env)
-    }
-
-    pub fn init(env: Env, admin: Address) {
-        env.storage().instance().set(&AdminKey::Admin, &admin);
-    }
-
-    pub fn version() -> u32 {
-        1
     }
 
     pub fn upgrade(env: Env, new_wasm_hash: BytesN<32>) {
@@ -128,8 +143,12 @@ impl ClaimableBalanceContract {
     }
 }
 
+// Helper functions
+fn reset(env: Env) {
+    env.storage().instance().remove(&DataKey::Balance);
+    env.storage().instance().remove(&DataKey::Init);
+}
+
 fn is_initialized(env: &Env) -> bool {
     env.storage().instance().has(&DataKey::Init)
 }
-
-// mod test;

@@ -9,11 +9,11 @@ import pandas as pd
 from gpiozero import Button, LED, RGBLED
 
 CONTRACT_HASH_PUMPIT = os.getenv("CONTRACT_HASH_PUMPIT")
-CLAIMANT_HASH_PUMPIT = os.getenv("CLAIMANT_HASH_PUMPIT")
+CLAIMANT_ADDR_PUMPIT = os.getenv("CLAIMANT_ADDR_PUMPIT")
 
-if CONTRACT_HASH_PUMPIT is None or CLAIMANT_HASH_PUMPIT is None:
+if CONTRACT_HASH_PUMPIT is None or CLAIMANT_ADDR_PUMPIT is None:
     raise ValueError(
-        "Missing environment variables CONTRACT_HASH_PUMPIT and CLAIMANT_HASH_PUMPIT"
+        "Missing environment variables CONTRACT_HASH_PUMPIT and CLAIMANT_ADDR_PUMPIT"
     )
 
 # hardware setup
@@ -28,12 +28,12 @@ green_led = LED(6)
 def soroban_call(level):
     cmd = (
         "soroban contract invoke "
-        f"--source {CLAIMANT_HASH_PUMPIT} "
+        f"--source {CLAIMANT_ADDR_PUMPIT} "
         "--network testnet "
         f"--id $(shell cat {CONTRACT_HASH_PUMPIT}) "
         "-- "
         "claim "
-        f"--claimant {CLAIMANT_HASH_PUMPIT} "
+        f"--claimant {CLAIMANT_ADDR_PUMPIT} "
         f"--pumping_level {level}"
     )
     subprocess.run(cmd, check=True)

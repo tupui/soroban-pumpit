@@ -1,24 +1,44 @@
+![Soroban logo](doc/soroban-wordmark-temp.svg)
 # Pumpit
 
-The goal of this project is to play with IOT and
+The goal of this project is to explore with IOT and
 [Soroban](https://soroban.stellar.org) - Stellar Smart Contract.
+
+[Stellar](https://stellar.org) is one of the most used blockchain technology.
+It offers concrete real world applications such as ease of cross border
+payments, tokenization of real world assets. And in January 2024, things are
+getting even better with the ability to write Smart Contracts. In the Stellar
+ecosystem, these are called *Soroban contracts*. 
+
+This project demonstrates how the concept of claimable balance can be used to
+make a game by using Raspberry Pi(s) which talk to a Soroban contract.
+Claimable balance is a powerful concept which allows many real world
+applications. Think for instance about a gym with a cycling class. All bikes
+could be connected to a contract and based on some scenario, one could win/lose
+some gym token. Basically, you can use a contract to incentive any system
+using a claimable balance.
 
 ## Game Play
 
-It's simple, the Smart Contract is initialised with a volume to pump and
+It's simple, the Smart Contract is initialised with a volume to *pump* and
 multiple addresses each corresponding to a participant. All participants,
 have their Raspberry Pi ready to pump, literally, and the first to reach the
 pumping level would win and receive the funds.
 
-If I am bored enough, I might make a UI for the Pi(s) so participants can
-set their address and see their progress... Or better yet someone can make a PR ;)
+## Project structure
+
+There are 2 folders:
+
+- *iot*: relates to the client side, Raspberry Pi code.
+- *contract*: the Soroban contract itself.
+
+Let's go through the IOT part first, and then we will cover the contract.
 
 ## Raspberry Pi
 
-One Raspberry Pi corresponds to one player. Once the Python service is
-started, it will listen on a GPIO connected to the flow meter. After a given
-volume is pumped, a RPC call to the Soroban contract will be made to claim
-funds.
+One Raspberry Pi corresponds to one player. A Python service listen on a GPIO
+connected to a flow meter (which is attached to a pump). After a given volume
+is pumped, a RPC call to the Soroban contract is made to claim funds.
 
 ### Hardware
 
@@ -30,9 +50,15 @@ I am using a Raspberry Pi Zero 2 W. BOM:
 - Green LED (+1x 220 ohm resistance)
 - RED LED (+1x 220 ohm resistance)
 - RGB LED (+3x 220 ohm resistance)
+- A bike pump (and some fitting to attach to the flow meter)
 
 See `iot/pumpit.py` for details on which GPIO to connect, it's very
-straightforward.
+straightforward:
+
+- The button is to reset the counter/flow history.
+- The green LED indicates that we can pump.
+- The RGB LED is getting brighter as we pump.
+- The red LED blinks when the contract is being invoked.
 
 ![Raspberry Pi diagram](doc/diagram.png)
 
@@ -48,24 +74,26 @@ source venv/bin/activate
 pip install .
 ```
 
-And also everything needed to run the Soroban contract:
-
+And everything needed to run the Soroban contract:
 ```bash
 # install Rust
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh && \
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 # install Soroban and config
-rustup target add wasm32-unknown-unknown && \
-cargo install --locked soroban-cli --features opt && \
+rustup target add wasm32-unknown-unknown
+cargo install --locked soroban-cli --features opt
+# Hash of the contract and address of the player/claimant
+export CONTRACT_HASH_PUMPIT=...
+export CLAIMANT_ADDR_PUMPIT=...
 ```
 
-Then to run the game client (provided the contract is initialized, see bellow):
+To run the game client (provided the contract is initialized, see bellow):
 
 ```bash
 python pumpit.py
 ```
 
 Behind the scene, it will invoke the contract once we reach the pumping
-threshold.
+threshold. Yes this is where you need to get pumping!
 
 ## Soroban - Stellar Smart Contract
 
@@ -87,28 +115,41 @@ rustup target add wasm32-unknown-unknown
 cargo install --locked soroban-cli --features opt
 ```
 
-We create two accounts on testnet and add some funds (in XLM).
+In the following, we will be using *testnet*. Another option for playing
+around is to use a docker image to run an actual Stellar network locally.
+It's very simple to do as they provide a ready-to-use
+[image](https://hub.docker.com/r/stellar/quickstart).
 
 ```bash
 soroban config network add --global testnet
 	--rpc-url https://soroban-testnet.stellar.org:443
 	--network-passphrase "Test SDF Network ; September 2015"
-# generate addresses and add funds
+```
+
+We create (at least) two accounts on testnet and add some funds (in XLM).
+Here I have `mando` and `grogu`. `mando` will be used as the admin of the
+contract, and it will also be the one giving up some of its funds to deposit
+on the contract.
+
+```bash
+# generate addresses
 soroban config identity generate grogu
 soroban config identity generate mando
+# and add funds
 soroban config identity fund grogu --network testnet
 soroban config identity fund mando --network testnet
 mkdir -p .soroban
 ```
 
-When doing operations on accounts (addresses), we can check the explorer:
+When performing operations on accounts (addresses), we can check the explorer:
 
 https://testnet.steexp.com/account/
 
+Let's have a look at our balances. Great, we have some test funds in XLM: 10K.
 ![Accounts on Stellar Explorer](doc/stellar_explorer_fund.png)
 
 After our contract is written/tested/ready, we can build and upload it to
-testnet:
+*testnet*:
 
 ```bash
 soroban contract build
@@ -144,9 +185,11 @@ soroban contract invoke \
 ```
 
 Then we can transfer some funds on the contract which will be claimable. Let's
-use 100 XLM from our user `mando`. Note that the unit on Soroban is Stroops
-which means `100 XLM = 1.10e9 Stroops`. We also need a target for our pumping
-level, let's say 10L:
+use 100 XLM from our user `mando`. The unit on Soroban is Stroops
+which means `100 XLM = 1.10e9 Stroops`. As we are interacting with a contract,
+only integers are allowed. We also need a target for our pumping level,
+let's say 10L, and we list some addresses which are allowed to claim
+the balance. In this case we only want `grogu` to be able to do so:
 
 ```bash
 soroban contract invoke \
@@ -169,12 +212,17 @@ soroban lab token id --asset native --network testnet
 # CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC  # may vary
 ```
 
+Also, `--claimants` is defined in the contract as a vector. The syntax is not
+obvious at first, be sure to respect the formatting.
+
+When we execute the command, we can verify the transaction on the explorer.
+
 ![Deposit and see in Stellar Explorer](doc/stellar_explorer_deposit.png)
 
-The contract is ready to be used! The following is done as part of the
-game on the Raspberry Pi(s).
-
-We try to claim funds by e.g. setting the current pumping level to 15L:
+The contract is ready to be used! The following would be done as part of the
+game on the Raspberry Pi(s). For testing purposes, we can try to claim the
+contract's balance as if we were `grogu`. We try to claim funds by
+e.g. setting the current pumping level to 15L:
 
 ```bash
 soroban contract invoke \
@@ -188,10 +236,24 @@ soroban contract invoke \
 ```
 
 Tada, it should say `in_successful_contract_call: true` and balances of the
-contract and claimant have changed:
+contract and claimant have changed as we can verify on-chain:
 
 ![Claim and see in Stellar Explorer](doc/stellar_explorer_claim.png)
 
 Checking the balance shows that the address did receive the funds from the
 claimable balance:
 ![Balance after claim and see in Stellar Explorer](doc/stellar_explorer_fund_after_claim.png)
+
+# What's next!?
+
+This is a simple examples, yet there are a few nice-things we can do to improve
+it:
+
+- Make a UI for the Pi(s) so participants can set their address and see their
+  progress.
+- Use a function to calculate the threshold so that a user cannot by-pass the
+  game by calling the contract with a high pumping level without doing anything.
+- Synchronize function to ensure multiple players start at the same time, also
+  rely on data stored on the contract.
+
+Feel free to raise any issues or even make PRs!
