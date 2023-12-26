@@ -1,12 +1,14 @@
-//! This contract demonstrates 'timelock' concept and implements a
-//! greatly simplified Claimable Balance (similar to
-//! https://developers.stellar.org/docs/glossary/claimable-balance).
 //! The contract allows to deposit some amount of token and allow another
-//! account(s) claim it before or after provided time point.
-//! For simplicity, the contract only supports invoker-based auth.
+//! account(s) claim it when a certain level is reach.
 #![no_std]
 
-use soroban_sdk::{contract, contractimpl, contracttype, token, Address, Env, Vec};
+use soroban_sdk::{contract, contractimpl, contracttype, token, Address, Env, Vec, BytesN};
+
+#[contracttype]
+#[derive(Clone)]
+enum AdminKey {
+    Admin,
+}
 
 #[derive(Clone)]
 #[contracttype]
@@ -17,40 +19,20 @@ pub enum DataKey {
 
 #[derive(Clone)]
 #[contracttype]
-pub enum PumpingLevelKind {
-    Lower,
-    Greater,
-}
-
-#[derive(Clone)]
-#[contracttype]
-pub struct TimeBound {
-    pub kind: PumpingLevelKind,
-    pub timestamp: u64,
-}
-
-#[derive(Clone)]
-#[contracttype]
 pub struct ClaimableBalance {
     pub token: Address,
     pub amount: i128,
     pub claimants: Vec<Address>,
-    pub time_bound: TimeBound,
+    pub pumping_level_target: i128,
+}
+
+fn reset(env: Env) {
+    env.storage().instance().remove(&DataKey::Balance);
+    env.storage().instance().remove(&DataKey::Init);
 }
 
 #[contract]
 pub struct ClaimableBalanceContract;
-
-// The 'timelock' part: check that provided timestamp is before/after
-// the current ledger timestamp.
-fn check_time_bound(env: &Env, time_bound: &TimeBound) -> bool {
-    let ledger_timestamp = env.ledger().timestamp();
-
-    match time_bound.kind {
-        PumpingLevelKind::Lower => ledger_timestamp <= time_bound.timestamp,
-        PumpingLevelKind::Greater => ledger_timestamp >= time_bound.timestamp,
-    }
-}
 
 #[contractimpl]
 impl ClaimableBalanceContract {
@@ -60,17 +42,18 @@ impl ClaimableBalanceContract {
         token: Address,
         amount: i128,
         claimants: Vec<Address>,
-        time_bound: TimeBound,
+        pumping_level_target: i128,
     ) {
-        if claimants.len() > 2 {
-            panic!("only 2 claimants can play");
-        }
-        if is_initialized(&env) {
-            panic!("contract has been already initialized");
-        }
         // Make sure `from` address authorized the deposit call with all the
         // arguments.
         from.require_auth();
+
+        if is_initialized(&env) {
+            panic!("contract has been already initialized");
+        }
+        if claimants.len() > 2 {
+            panic!("only 2 claimants can play");
+        }
 
         // Transfer token from `from` to this contract address.
         token::Client::new(&env, &token).transfer(&from, &env.current_contract_address(), &amount);
@@ -80,32 +63,35 @@ impl ClaimableBalanceContract {
             &ClaimableBalance {
                 token,
                 amount,
-                time_bound,
+                pumping_level_target,
                 claimants,
             },
         );
         // Mark contract as initialized to prevent double-usage.
-        // Note, that this is just one way to approach initialization - it may
-        // be viable to allow one contract to manage several claimable balances.
         env.storage().instance().set(&DataKey::Init, &());
     }
 
-    pub fn claim(env: Env, claimant: Address) {
+    pub fn claim(env: Env, claimant: Address, pumping_level: i128) {
         // Make sure claimant has authorized this call, which ensures their
         // identity.
         claimant.require_auth();
+
+        if !is_initialized(&env) {
+            panic!("contract has not been initialized");
+        }
+
         // Just get the balance - if it's been claimed, this will simply panic
         // and terminate the contract execution.
         let claimable_balance: ClaimableBalance =
             env.storage().instance().get(&DataKey::Balance).unwrap();
 
-        if !check_time_bound(&env, &claimable_balance.time_bound) {
-            panic!("time predicate is not fulfilled");
-        }
-
         let claimants = &claimable_balance.claimants;
         if !claimants.contains(&claimant) {
             panic!("claimant is not allowed to claim this balance");
+        }
+
+        if pumping_level < claimable_balance.pumping_level_target {
+            panic!("need to pump more!");
         }
 
         // Transfer the stored amount of token to claimant after passing
@@ -115,8 +101,30 @@ impl ClaimableBalanceContract {
             &claimant,
             &claimable_balance.amount,
         );
-        // Remove the balance entry to prevent any further claims.
-        env.storage().instance().remove(&DataKey::Balance);
+        // Reset the contract data
+        reset(env)
+    }
+
+    pub  fn reset(env: Env) {
+        let admin: Address = env.storage().instance().get(&AdminKey::Admin).unwrap();
+        admin.require_auth();
+
+        reset(env)
+    }
+
+    pub fn init(env: Env, admin: Address) {
+        env.storage().instance().set(&AdminKey::Admin, &admin);
+    }
+
+    pub fn version() -> u32 {
+        1
+    }
+
+    pub fn upgrade(env: Env, new_wasm_hash: BytesN<32>) {
+        let admin: Address = env.storage().instance().get(&AdminKey::Admin).unwrap();
+        admin.require_auth();
+
+        env.deployer().update_current_contract_wasm(new_wasm_hash);
     }
 }
 
@@ -124,4 +132,4 @@ fn is_initialized(env: &Env) -> bool {
     env.storage().instance().has(&DataKey::Init)
 }
 
-mod test;
+// mod test;

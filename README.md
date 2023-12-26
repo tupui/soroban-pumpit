@@ -72,9 +72,22 @@ are 2 fees associated to it (at the time of writing, around 100k stroop.)
 
 Now we can interact with our contract!
 
-### Init contract
+### Interact with the contract
+
+Now we can initialize the admin of the contract (useful to upgrade without
+changing the ID/hash on client side):
 
 ```bash
-
+make contract_init
 ```
-make init_contract
+
+Then we can transfer some funds on the contract which will be claimable
+```bash
+make contract_deposit
+```
+
+And finally to claim funds:
+
+```bash
+make contract_claim
+```

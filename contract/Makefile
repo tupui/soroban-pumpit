@@ -33,19 +33,61 @@ build:
 test: build
 	cargo test
 
-build-release:
-	soroban contract optimize
+build-release: build
+	soroban contract optimize --wasm target/wasm32-unknown-unknown/release/pumpit.wasm
 	@ls -l target/wasm32-unknown-unknown/release/*.wasm
 
 deploy: build-release
 	soroban contract deploy \
-  		--wasm target/wasm32-unknown-unknown/release/pumpit.wasm \
+  		--wasm target/wasm32-unknown-unknown/release/pumpit.optimized.wasm \
   		--source mando \
   		--network testnet \
   		> .soroban/pumpit_id && \
-  	@cat .soroban/pumpit_id
+  	cat .soroban/pumpit_id
+
+contract_help:
+	soroban contract invoke \
+    	--source mando \
+    	--network testnet \
+    	--id $(shell cat .soroban/pumpit_id) \
+    	-- \
+    	--help
 
 contract_init:
+	soroban contract invoke \
+    	--source mando \
+    	--network testnet \
+    	--id $(shell cat .soroban/pumpit_id) \
+    	-- \
+    	init \
+    	--admin $(shell soroban config identity address mando)
+
+contract_version:
+	soroban contract invoke \
+    	--source mando \
+    	--network testnet \
+    	--id $(shell cat .soroban/pumpit_id) \
+    	-- \
+    	version
+
+contract_upgrade:
+	soroban contract invoke \
+    	--source mando \
+    	--network testnet \
+    	--id $(shell cat .soroban/pumpit_id) \
+    	-- \
+    	upgrade \
+		--new_wasm_hash $(shell soroban contract install --wasm target/wasm32-unknown-unknown/release/pumpit.optimized.wasm)
+
+contract_reset:
+	soroban contract invoke \
+    	--source mando \
+    	--network testnet \
+    	--id $(shell cat .soroban/pumpit_id) \
+    	-- \
+    	reset
+
+contract_deposit:
 	soroban contract invoke \
     	--source mando \
     	--network testnet \
@@ -54,7 +96,7 @@ contract_init:
     	deposit \
     	--from $(shell soroban config identity address mando) \
     	--token $(shell soroban lab token id --asset native --network testnet) \
-    	--amount 100000000 \
+    	--amount 1000000000 \
     	--claimants '{ "vec": [{ "address": "$(shell soroban config identity address grogu)" }] }' \
     	--pumping_level_target 10
 
