@@ -2,7 +2,7 @@
 //! account(s) claim it when a certain level is reach.
 #![no_std]
 
-use soroban_sdk::{contract, contractimpl, contracttype, token, Address, Env, Vec, BytesN};
+use soroban_sdk::{contract, contractimpl, contracttype, token, Address, BytesN, Env, Vec};
 
 #[contracttype]
 #[derive(Clone)]
@@ -105,7 +105,7 @@ impl ClaimableBalanceContract {
         reset(env)
     }
 
-    pub  fn reset(env: Env) {
+    pub fn reset(env: Env) {
         let admin: Address = env.storage().instance().get(&AdminKey::Admin).unwrap();
         admin.require_auth();
 
