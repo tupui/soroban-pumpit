@@ -25,7 +25,7 @@ red_led = LED(5)
 green_led = LED(6)
 
 
-def soroban_call(level):
+def soroban_call(level: int) -> None:
     cmd = (
         "soroban contract invoke "
         f"--source {CLAIMANT_ADDR_PUMPIT} "
