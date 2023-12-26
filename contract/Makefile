@@ -1,15 +1,21 @@
-default: build
+.PHONY: help install prepare fmt clean build test build-release deploy contract_help contract_init contract_deposit contract_claim
+.DEFAULT_GOAL := help
+SHELL:=/bin/bash
 
-all: test
+# Add help text after each target name starting with '\#\#'
+help:   ## show this help
+	@echo -e "Help for this makefile\n"
+	@echo "Possible commands are:"
+	@grep -h "##" $(MAKEFILE_LIST) | grep -v grep | sed -e 's/\(.*\):.*##\(.*\)/    \1: \2/'
 
-install:
+install:  ## install Rust and Soroban-CLI
 	# install Rust
 	curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh && \
 	# install Soroban and config
 	rustup target add wasm32-unknown-unknown && \
 	cargo install --locked soroban-cli --features opt && \
 
-prepare:
+prepare:  ## Generate identity and fund
 	soroban config network add --global testnet \
   		--rpc-url https://soroban-testnet.stellar.org:443 \
   		--network-passphrase "Test SDF Network ; September 2015" && \
@@ -37,7 +43,7 @@ build-release: build
 	soroban contract optimize --wasm target/wasm32-unknown-unknown/release/pumpit.wasm
 	@ls -l target/wasm32-unknown-unknown/release/*.wasm
 
-deploy: build-release
+deploy: build-release  ## Deploy Soroban contract to testnet
 	soroban contract deploy \
   		--wasm target/wasm32-unknown-unknown/release/pumpit.optimized.wasm \
   		--source mando \
@@ -53,7 +59,7 @@ contract_help:
     	-- \
     	--help
 
-contract_init:
+contract_init:  ## Initialise admin of the contract
 	soroban contract invoke \
     	--source mando \
     	--network testnet \
@@ -87,20 +93,20 @@ contract_reset:
     	-- \
     	reset
 
-contract_deposit:
+contract_deposit:  ## Deposit fund to the contract and set target
 	soroban contract invoke \
-    	--source mando \
-    	--network testnet \
-    	--id $(shell cat .soroban/pumpit_id) \
-    	-- \
-    	deposit \
-    	--from $(shell soroban config identity address mando) \
-    	--token $(shell soroban lab token id --asset native --network testnet) \
-    	--amount 1000000000 \
-    	--claimants '{ "vec": [{ "address": "$(shell soroban config identity address grogu)" }] }' \
-    	--pumping_level_target 10
+		--source mando \
+		--network testnet \
+		--id $(shell cat .soroban/pumpit_id) \
+		-- \
+		deposit \
+		--from $(shell soroban config identity address mando) \
+		--token $(shell soroban lab token id --asset native --network testnet) \
+		--amount 1000000000 \
+		--claimants '{ "vec": [{ "address": "$(shell soroban config identity address grogu)" }] }' \
+		--pumping_level_target 10
 
-contract_claim:
+contract_claim:  ## Claim funds with a level
 	soroban contract invoke \
     	--source grogu \
     	--network testnet \

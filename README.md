@@ -32,7 +32,8 @@ There are 2 folders:
 - *iot*: relates to the client side, Raspberry Pi code.
 - *contract*: the Soroban contract itself.
 
-Let's go through the IOT part first, and then we will cover the contract.
+In each folder, there is a handy Makefile with useful commands. Let's go
+through the IOT part first, and then we will cover the contract.
 
 ## Raspberry Pi
 
@@ -246,8 +247,9 @@ claimable balance:
 
 # What's next!?
 
-This is a simple examples, yet there are a few nice-things we can do to improve
-it:
+This is a simple example, yet it showcase how a simple concept can be used in
+a somehow real application. There are a few nice-things we can do to improve
+this specific project:
 
 - Make a UI for the Pi(s) so participants can set their address and see their
   progress.
