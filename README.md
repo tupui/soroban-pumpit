@@ -3,18 +3,15 @@
 The goal of this project is to play with IOT and
 [Soroban](https://soroban.stellar.org) - Stellar Smart Contract.
 
-![Raspberry Pi diagram](doc/diagram.png)
-
 ## Game Play
 
-It's simple, the Smart Contract was initialised with a volume to pump. Once
-you pumped it, literally, funds will get transferred to you.
+It's simple, the Smart Contract is initialised with a volume to pump and
+multiple addresses each corresponding to a participant. All participants,
+have their Raspberry Pi ready to pump, literally, and the first to reach the
+pumping level would win and receive the funds.
 
-The contract can be initialized with multiple claimable addresses to make
-the game more interactive. The first to reach the pumping level would win and
-receive the funds.
-
-If I am bored enough, I might make a UI... Or someone can make a PR ;)
+If I am bored enough, I might make a UI for the Pi(s) so participants can
+set their address and see their progress... Or better yet someone can make a PR ;)
 
 ## Raspberry Pi
 
@@ -37,9 +34,11 @@ I am using a Raspberry Pi Zero 2 W. BOM:
 See `iot/pumpit.py` for details on which GPIO to connect, it's very
 straightforward.
 
+![Raspberry Pi diagram](doc/diagram.png)
+
 ### Python service
 
-After a classical headless setup of the Raspberry Pi, install everything:
+After a classical headless setup of the Raspberry Pi, install everything Python:
 ```bash
 ssh grogu@pumpit -i .ssh/raspberrypi_zero
 sudo apt-get install libopenblas-dev
@@ -47,6 +46,16 @@ cd iot
 python -m venv venv
 source venv/bin/activate
 pip install .
+```
+
+And also everything needed to run the Soroban contract:
+
+```bash
+# install Rust
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh && \
+# install Soroban and config
+rustup target add wasm32-unknown-unknown && \
+cargo install --locked soroban-cli --features opt && \
 ```
 
 Then to run the game client (provided the contract is initialized, see bellow):
