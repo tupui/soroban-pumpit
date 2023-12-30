@@ -264,7 +264,7 @@ this specific project:
 
 - Make a UI for the Pi(s) so participants can set their address and see their
   progress.
-- Use a function to calculate the threshold so that a user cannot by-pass the
+- Use a hardware security module (e.g. Zymbit) so that a user cannot by-pass the
   game by calling the contract with a high pumping level without doing anything.
 - Synchronize function to ensure multiple players start at the same time, also
   rely on data stored on the contract.
