@@ -30,7 +30,7 @@ def soroban_call(level: int) -> None:
         "soroban contract invoke "
         f"--source {CLAIMANT_ADDR_PUMPIT} "
         "--network testnet "
-        f"--id $(shell cat {CONTRACT_HASH_PUMPIT}) "
+        f"--id {CONTRACT_HASH_PUMPIT} "
         "-- "
         "claim "
         f"--claimant {CLAIMANT_ADDR_PUMPIT} "
