@@ -86,6 +86,14 @@ And everything needed to run the Soroban contract:
 ```bash
 # install Rust
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+# if the install fails, it's probably a RAM issue. You can increase the SWAP
+# sudo dphys-swapfile swapoff
+# sudo vi /etc/dphys-swapfile
+# Change CONF_SWAPSIZE=100 to CONF_SWAPSIZE=512
+# sudo dphys-swapfile setup
+# sudo dphys-swapfile swapon
+# sudo reboot
+# Then `rustup uninstall stable && rustup install stable`
 # install Soroban and config
 rustup target add wasm32-unknown-unknown
 cargo install --locked soroban-cli --features opt
