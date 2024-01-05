@@ -25,7 +25,9 @@ classifiers = [
 
 dependencies = [
     "gpiozero",
-    "RPi.GPIO",
+    "pigpio; sys_platform == 'darwin'",
+    "RPi.GPIO; sys_platform != 'darwin'",
+    "stellar-sdk",
     "numpy",
     "pandas",
 ]
