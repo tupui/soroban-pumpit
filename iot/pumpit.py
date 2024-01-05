@@ -8,12 +8,14 @@ import numpy as np
 import pandas as pd
 from gpiozero import Button, LED, RGBLED
 
-CONTRACT_HASH_PUMPIT = os.getenv("CONTRACT_HASH_PUMPIT")
-CLAIMANT_ADDR_PUMPIT = os.getenv("CLAIMANT_ADDR_PUMPIT")
+from soroban import soroban_claim
 
-if CONTRACT_HASH_PUMPIT is None or CLAIMANT_ADDR_PUMPIT is None:
+CONTRACT_HASH_PUMPIT = os.getenv("CONTRACT_HASH_PUMPIT")
+CLAIMANT_ADDR_SECRET_PUMPIT = os.getenv("CLAIMANT_ADDR_SECRET_PUMPIT")
+
+if CONTRACT_HASH_PUMPIT is None or CLAIMANT_ADDR_SECRET_PUMPIT is None:
     raise ValueError(
-        "Missing environment variables CONTRACT_HASH_PUMPIT and CLAIMANT_ADDR_PUMPIT"
+        "Missing environment variables CONTRACT_HASH_PUMPIT and CLAIMANT_ADDR_SECRET_PUMPIT"
     )
 
 # hardware setup
@@ -23,20 +25,6 @@ flow_meter = Button(26)
 rgb_led = RGBLED(red=9, green=10, blue=11)
 red_led = LED(5)
 green_led = LED(6)
-
-
-def soroban_call(level: int) -> None:
-    cmd = (
-        "soroban contract invoke "
-        f"--source {CLAIMANT_ADDR_PUMPIT} "
-        "--network testnet "
-        f"--id {CONTRACT_HASH_PUMPIT} "
-        "-- "
-        "claim "
-        f"--claimant {CLAIMANT_ADDR_PUMPIT} "
-        f"--pumping_level {level}"
-    )
-    subprocess.run(cmd, check=True)
 
 
 class Pump:
@@ -108,9 +96,14 @@ while "Pumping":
         rgb_led.off()
         print("Calling Soroban smart contract")
         time.sleep(5)
-        soroban_call(level=int(curr_volume))
+        result = soroban_claim(
+            secret_key=CLAIMANT_ADDR_SECRET_PUMPIT,
+            contract_id=CONTRACT_HASH_PUMPIT,
+            level=int(curr_volume)
+        )
         rgb_led.color = (0, 0, 1)
-        print("Contract called!")
+        if result:
+            print("Contract called successfully!")
         break
     else:
         rgb_led.color = (0, curr_volume / max_pumping_volume, 0)

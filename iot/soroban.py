@@ -37,11 +37,13 @@ def soroban_claim(secret_key: str, contract_id: str, level: int):
         .build()
     )
 
+    response = False
+
     try:
         tx = soroban_server.prepare_transaction(tx)
     except PrepareTransactionException as e:
         print(f"Got exception: {e.simulate_transaction_response}")
-        raise e
+        return response
 
     tx.sign(address_kp)
     print(f"Signed XDR:\n{tx.to_xdr()}")
@@ -49,7 +51,8 @@ def soroban_claim(secret_key: str, contract_id: str, level: int):
     send_transaction_data = soroban_server.send_transaction(tx)
     print(f"sent transaction: {send_transaction_data}")
     if send_transaction_data.status != SendTransactionStatus.PENDING:
-        raise Exception("send transaction failed")
+        print("send transaction failed")
+        return response
     while True:
         print("waiting for transaction to be confirmed...")
         get_transaction_data = soroban_server.get_transaction(send_transaction_data.hash)
@@ -59,12 +62,15 @@ def soroban_claim(secret_key: str, contract_id: str, level: int):
 
     print(f"transaction: {get_transaction_data}")
 
+    response = False
     if get_transaction_data.status == GetTransactionStatus.SUCCESS:
-        assert get_transaction_data.result_meta_xdr is not None
         transaction_meta = stellar_xdr.TransactionMeta.from_xdr(
             get_transaction_data.result_meta_xdr
         )
         if transaction_meta.v3.soroban_meta.return_value.type == stellar_xdr.SCValType.SCV_VOID:  # type: ignore[union-attr]
-            print("send success")
+            print("send response")
+            response = True
     else:
         print(f"Transaction failed: {get_transaction_data.result_xdr}")
+
+    return response
