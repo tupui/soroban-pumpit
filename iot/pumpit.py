@@ -1,6 +1,5 @@
 import os
 from signal import pause
-import subprocess
 import time
 import threading
 

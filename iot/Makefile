@@ -3,11 +3,11 @@
 SHELL:=/bin/bash
 
 ifndef CONTRACT_HASH_PUMPIT
-   override CONTRACT_HASH_PUMPIT = ...
+   override CONTRACT_HASH_PUMPIT = "CAR7DAS2IGV2E542R4EJRDV7QQERQFLQZRZWVQEE7J3G4R65RLWSO53B"
 endif
 
-ifndef CLAIMANT_ADDR_PUMPIT
-   override CLAIMANT_ADDR_PUMPIT = ...
+ifndef CLAIMANT_ADDR_SECRET_PUMPIT
+   override CLAIMANT_ADDR_SECRET_PUMPIT = ...
 endif
 
 # Add help text after each target name starting with '\#\#'
@@ -16,13 +16,7 @@ help:   ## show this help
 	@echo "Possible commands are:"
 	@grep -h "##" $(MAKEFILE_LIST) | grep -v grep | sed -e 's/\(.*\):.*##\(.*\)/    \1: \2/'
 
-install:  ## install Rust, Soroban-CLI and Python dependencies
-	sudo apt-get install libopenblas-dev
-	# install Rust
-	curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-	# install Soroban and config
-	rustup target add wasm32-unknown-unknown
-	cargo install --locked soroban-cli --features opt
+install:  ## install Python dependencies
 	# Python part
 	python -m venv venv
 	source venv/bin/activate
@@ -30,4 +24,4 @@ install:  ## install Rust, Soroban-CLI and Python dependencies
 
 run:
 	source venv/bin/activate
-	python pumpit.py
+	CONTRACT_HASH_PUMPIT=($CONTRACT_HASH_PUMPIT) CLAIMANT_ADDR_SECRET_PUMPIT=$(CLAIMANT_ADDR_SECRET_PUMPIT) python pumpit.py
