@@ -2,6 +2,10 @@
 .DEFAULT_GOAL := help
 SHELL:=/bin/bash
 
+ifndef PUMPIT_LEVEL
+   override PUMPIT_LEVEL = 10
+endif
+
 ifndef CONTRACT_HASH_PUMPIT
    override CONTRACT_HASH_PUMPIT = "CAR7DAS2IGV2E542R4EJRDV7QQERQFLQZRZWVQEE7J3G4R65RLWSO53B"
 endif
@@ -23,5 +27,5 @@ install:  ## install Python dependencies
 	pip install .
 
 run:
-	source venv/bin/activate
-	CONTRACT_HASH_PUMPIT=$(CONTRACT_HASH_PUMPIT) CLAIMANT_ADDR_SECRET_PUMPIT=$(CLAIMANT_ADDR_SECRET_PUMPIT) python pumpit.py
+	source venv/bin/activate && \
+	PUMPIT_LEVEL=$(PUMPIT_LEVEL) CONTRACT_HASH_PUMPIT=$(CONTRACT_HASH_PUMPIT) CLAIMANT_ADDR_SECRET_PUMPIT=$(CLAIMANT_ADDR_SECRET_PUMPIT) python pumpit.py

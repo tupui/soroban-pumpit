@@ -9,6 +9,7 @@ from gpiozero import Button, LED, RGBLED
 
 from soroban import soroban_claim
 
+PUMPIT_LEVEL = os.getenv("PUMPIT_LEVEL", 10)
 CONTRACT_HASH_PUMPIT = os.getenv("CONTRACT_HASH_PUMPIT")
 CLAIMANT_ADDR_SECRET_PUMPIT = os.getenv("CLAIMANT_ADDR_SECRET_PUMPIT")
 
@@ -74,7 +75,6 @@ flow_meter.when_pressed = pump.tick
 clear_pump.when_activated = pump.clear
 
 # logic starts here
-max_pumping_volume = 10.
 
 # green LED says we are ready for business and can start pumping
 green_led.on()
@@ -88,7 +88,7 @@ while "Pumping":
     curr_volume = pump.volume()
     print(f"Flow rate: {pump.flow_rate()} L/M and we pumped {curr_volume} L")
 
-    if curr_volume > max_pumping_volume:
+    if curr_volume > PUMPIT_LEVEL:
         green_led.off()
         red_led.blink(on_time=0.25, off_time=0.25, n=4*5)
         pump.clear()
@@ -105,6 +105,6 @@ while "Pumping":
             print("Contract called successfully!")
         break
     else:
-        rgb_led.color = (0, curr_volume / max_pumping_volume, 0)
+        rgb_led.color = (0, curr_volume / PUMPIT_LEVEL, 0)
 
 pause()
