@@ -9,7 +9,7 @@ from gpiozero import Button, LED, RGBLED
 
 from soroban import soroban_claim
 
-PUMPIT_LEVEL = os.getenv("PUMPIT_LEVEL", 10)
+PUMPIT_LEVEL = int(os.getenv("PUMPIT_LEVEL", 10))
 CONTRACT_HASH_PUMPIT = os.getenv("CONTRACT_HASH_PUMPIT")
 CLAIMANT_ADDR_SECRET_PUMPIT = os.getenv("CLAIMANT_ADDR_SECRET_PUMPIT")
 
