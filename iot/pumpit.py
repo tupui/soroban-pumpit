@@ -61,6 +61,7 @@ class Pump:
                 return 0.
             data = pd.DataFrame(np.ones(n_ticks), index=self.ticks)
             self.flow_history += self.ticks
+            self.ticks = []
 
         if n_ticks > 1_000_000:  # avoid memory issues
             self.clear()
