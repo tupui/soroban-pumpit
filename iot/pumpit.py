@@ -95,7 +95,6 @@ while "Pumping":
         pump.clear()
         rgb_led.off()
         print("Calling Soroban smart contract")
-        time.sleep(5)
         result = soroban_claim(
             secret_key=CLAIMANT_ADDR_SECRET_PUMPIT,
             contract_id=CONTRACT_HASH_PUMPIT,
