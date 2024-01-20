@@ -260,6 +260,5 @@ this specific project:
   game by calling the contract with a high pumping level without doing anything.
 - Synchronize function to ensure multiple players start at the same time, also
   rely on data stored on the contract.
-- Use the Python SDK to talk to Soroban. i.e. simplify IOT deployment.
 
 Feel free to raise any issues or even make PRs!
